@@ -22,6 +22,9 @@ class Line(_Primative):
 class Point(_Primative):
     pass
 
-class Circle():
+class Ellipse(_Primative):
+    pass
+
+class Circle(Ellipse):
     pass
 
