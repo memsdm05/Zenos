@@ -3,7 +3,6 @@ from math import pi
 
 WHITE = (255, 255, 255)
 
-
 class _Primative():
     def __init__(self, color=WHITE):
         self.color = color
