@@ -1,10 +1,18 @@
 import pyglet
-from math import pi
+from math import pi, sqrt
 
 WHITE = (255, 255, 255)
 
+
+def distance(p1, p2):
+    x1, y1 = p1.pos
+    x2, y2 = p2.pos
+    dx, dy = x2 - x1, y2 - y1
+    return sqrt(dx**2 + dy**2)
+
+
 class _Primative():
-    def __init__(self, color=WHITE):
+    def __init__(self, color):
         self.color = color
 
     def render(self):
@@ -12,22 +20,39 @@ class _Primative():
 
 
 class Polygon(_Primative):
+    def __init__(self, list_of_points, color=WHITE, fill=False):
+        super(Polygon, self).__init__(color)
+        self.vertices = list_of_points
+        self.length = len(list_of_points)
+        self.lines = []
+        for i in range(self.length):
+            p1 = list_of_points[i]
+            p2 = list_of_points[0] if i == self.length - 1 else list_of_points[i+1]
+            self.lines.append(Line(p1, p2))
+
+
+class RegularPolygon(Polygon):
     pass
 
 
-class Quad(Polygon):
+class Quad(Polygon):  # why is quad a thing
     pass
-
+        
 
 class Rectangle(Quad):
-    pass
+    def __init__(self, point, w, h, color=WHITE, fill=False):
+        x, y = point.pos
+        vertices = ((x, y), (x + w, y), (x + w, y + h), (x, y + h))
+        super(Rectangle, self).__init__(vertices, color, fill)
 
 
-class Square(Rectangle):
-    pass
+class Square(Rectangle, RegularPolygon):
+    def __init__(self, point, side):
+        Rectangle.__init__(self, point, side, side)
+        RegularPolygon.__init__(self, self.list_of_points)
 
 
-class Triangle(Polygon):
+class Triangle(Polygon):  # why is this a thing
     pass
 
 
