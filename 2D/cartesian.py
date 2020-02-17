@@ -1,4 +1,5 @@
-from Primatives import Point
+from Primatives import Point, distance
+
 
 class Vector2:
     def __init__(self, p1, p2=None):
@@ -10,8 +11,7 @@ class Vector2:
         self.magnitude = self._magnitude()
 
     def _magnitude(self):
-        x1, y1 = self.start.pos
-        x2, y2 = self.end.pos
+        return distance(self.start, self.end)
 
     def __add__(self, other):
         pass
