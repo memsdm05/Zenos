@@ -1,5 +1,6 @@
 from pyglet.gl import *
 from math import *
+from Top_Down.Math import Vector2, Vector3
 
 
 class LowLevel:
@@ -14,7 +15,10 @@ class LowLevel:
 
     @staticmethod
     def convert_pos(pos):
-        return pos
+        if len(pos) == 2:
+            return Vector2(*pos)
+        elif len(pos) == 3:
+            return Vector3(*pos)
 
     def enable_3d(self):
         width, height = self.top_level.get_size()

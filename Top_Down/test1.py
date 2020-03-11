@@ -1,7 +1,5 @@
-from Top_Level import Window
-import _2D
-import Resources
-
+from Top_Down import _2D, Resources
+from Top_Down.Top_Level import Window
 
 class TestWindow(Window):
     c = _2D.Square((100, 100), 10)

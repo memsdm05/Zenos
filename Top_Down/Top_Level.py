@@ -28,6 +28,7 @@ class Window(pyglet.window.Window):
     def _periodic(dt):
         Window.active_window.periodic(dt)
 
+    # the main game loop
     def periodic(self, dt):
         pass
 
