@@ -1,9 +1,9 @@
 import pyglet
-from Low_Level import LowLevel
+from Top_Down.Low_Level import LowLevel
 import math
 from pyglet.window.key import *
-from Resources.Overlays import BLACK
-from Resources.Rendering import Group
+from Top_Down.Resources.Overlays import BLACK
+from Top_Down.Resources.Rendering import Group
 
 
 class Window(pyglet.window.Window):

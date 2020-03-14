@@ -1,9 +1,9 @@
 import pyglet
 from math import *
-from Resources.Overlays import WHITE, _TemplateOverlay
-from Resources.Rendering import Group, _ElementTemplate
-from Resources.Math import Vector
-from Low_Level import LowLevel
+from Top_Down.Resources.Overlays import WHITE, _TemplateOverlay
+from Top_Down.Resources.Rendering import Group, _ElementTemplate
+from Top_Down.Resources.Math import Vector
+from Top_Down.Low_Level import LowLevel
 
 # utility functions
 convert_pos = LowLevel.convert_pos

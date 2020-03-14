@@ -1,7 +1,7 @@
 import pyglet
-from Low_Level import LowLevel
-from Resources.Overlays import WHITE, _TemplateOverlay
-from Resources.Rendering import _ElementTemplate, Group
+from Top_Down.Low_Level import LowLevel
+from Top_Down.Resources.Overlays import WHITE, _TemplateOverlay
+from Top_Down.Resources.Rendering import _ElementTemplate, Group
 
 
 class Template3d(_ElementTemplate):

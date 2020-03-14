@@ -1,7 +1,6 @@
 import pyglet
-import Low_Level
-from Resources.Overlays import _TemplateOverlay
-from Resources.Math import Vector
+import Top_Down.Low_Level
+from Top_Down.Resources.Overlays import _TemplateOverlay
 
 # todo - clean this shit up
 class _ElementTemplate:
