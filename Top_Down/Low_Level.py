@@ -1,46 +1,51 @@
 from pyglet.gl import *
 from math import *
-from Top_Down.Math import Vector2, Vector3
+from Top_Down.Resources.Math import Vector
 
 
 class LowLevel:
     width = None
     height = None
+    active = None
 
     def __init__(self, window):
         self.top_level = window
         self.mode = 2
         LowLevel.width, LowLevel.height = window.get_size()
-
+        LowLevel.active = self
 
     @staticmethod
     def convert_pos(pos):
-        if len(pos) == 2:
-            return Vector2(*pos)
-        elif len(pos) == 3:
-            return Vector3(*pos)
+        if len(pos) == 3:
+            x, y, z = pos
+            return Vector(-x, y, z)
+        return Vector(*pos)
 
     def enable_3d(self):
+        # self.top_level.Projection()
         width, height = self.top_level.get_size()
         glEnable(GL_DEPTH_TEST)
         viewport = self.top_level.get_viewport_size()
         glViewport(0, 0, max(1, viewport[0]), max(1, viewport[1]))
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluPerspective(65.0, width / float(height), 0.1, 60.0)
+        gluPerspective(70.0, width / float(height), 0.1, 1000.0)  # FOVy, window dimensions, near, far range of view
         glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        x, y = self.top_level.rotation
-        glRotatef(x, 0, 1, 0)
-        glRotatef(-y, cos(radians(x)), 0, sin(radians(x)))
-        x, y, z = self.top_level.position
-        glTranslatef(-x, -y, -z)
+        self.update_camera_position()
         self.mode = 3
 
+    def update_camera_position(self):
+        glLoadIdentity()
+        x, y = self.top_level.rotation
+        glRotatef(x + 180, 0, 1, 0)
+        glRotatef(y, cos(radians(x)), 0, sin(radians(x)))
+        x, y, z = self.top_level.position
+        glTranslatef(x, -y, -z)
+
     def enable_2d(self):
-        width, height = self.get_size()
+        width, height = self.top_level.get_size()
         glDisable(GL_DEPTH_TEST)
-        viewport = self.get_viewport_size()
+        viewport = self.top_level.get_viewport_size()
         glViewport(0, 0, max(1, viewport[0]), max(1, viewport[1]))
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
