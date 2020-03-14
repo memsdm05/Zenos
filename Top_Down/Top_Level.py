@@ -1,13 +1,14 @@
 import pyglet
-from Top_Down.Low_Level import LowLevel
+from Low_Level import LowLevel
 import math
 from pyglet.window.key import *
-from Top_Down.Resources.Overlays import BLACK
-from Top_Down.Resources.Rendering import Group
+from Resources.Overlays import BLACK
+from Resources.Rendering import Group
 
 
 class Window(pyglet.window.Window):
     active_window = None
+    keys = pyglet.window.key
 
     def __init__(self):
         super(Window, self).__init__()
@@ -29,7 +30,8 @@ class Window(pyglet.window.Window):
         pyglet.app.run()
 
     def quit(self):
-        quit()
+        pyglet.app.exit()
+        # quit()
 
     @staticmethod
     def _periodic(dt: float):
@@ -104,7 +106,7 @@ class Window(pyglet.window.Window):
         side += 90
         dx = math.sin(math.radians(side)) * dis
         dz = math.cos(math.radians(side)) * dis
-        dy = math.sin(math.radians(up)) * dis
+        dy = 0  # math.sin(math.radians(up)) * dis
         x, y, z = self.position
         self.position = x + dx, y + dy, z + dz
         # self._inner.update_camera_position()

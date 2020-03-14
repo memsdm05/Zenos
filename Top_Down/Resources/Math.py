@@ -1,3 +1,6 @@
+from math import *  # just steal standard library
+
+
 class Vector(tuple):
     def __new__(cls, *args):
         return tuple.__new__(cls, tuple(args))
@@ -13,8 +16,3 @@ class Vector(tuple):
 
     def __pow__(self, power, modulo=None):
         pass
-
-    def test(self):
-        print("hi")
-
-# tuple.test = Vector.test

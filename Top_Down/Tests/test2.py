@@ -1,16 +1,13 @@
-import _3D
-import _2D
-from Top_Level import Window
-from pyglet.window.key import *
-from Resources.Overlays import *
+from Zenos_package import *
+
 
 class TestWindow(Window):
-    c = _3D.Cube((2, 3, 10), 1, RED)
+    c = ThreeD.Cube((2, 3, 10), 1, RED)
 
     def __init__(self):
         super(TestWindow, self).__init__()
-        self.sky = _2D.Rectangle((0, self.height), self.width, self.height//2, LIGHT_BLUE)
-        self.ground = _2D.Rectangle((0, self.height // 2), self.width, self.height // 2, BROWN)
+        self.sky = TwoD.Rectangle((0, self.height), self.width, self.height//2, LIGHT_BLUE)
+        self.ground = TwoD.Rectangle((0, self.height // 2), self.width, self.height // 2, BROWN)
 
     def periodic(self, dt):
         self.clear()
@@ -26,15 +23,15 @@ class TestWindow(Window):
 
     def on_key_press(self, symbol, modifiers):
         x, y, z = self.position
-        if symbol == DOWN:
+        if symbol == self.keys.DOWN:
             self.position = x, y, z-1
-        if symbol == UP:
+        if symbol == self.keys.UP:
             self.position = x, y, z+1
-        if symbol == LEFT:
+        if symbol == self.keys.LEFT:
             self.position = x-1, y, z
-        if symbol == RIGHT:
+        if symbol == self.keys.RIGHT:
             self.position = x+1, y, z
-        if symbol == SPACE:
+        if symbol == self.keys.SPACE:
             self.position = x, y+10, z
 
 

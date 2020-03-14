@@ -1,7 +1,7 @@
 import pyglet
 
 
-class TemplateOverlay:
+class _TemplateOverlay:
     _mode = "c4B"
     def raw(self):
         pass
@@ -10,7 +10,7 @@ class TemplateOverlay:
         return self._mode, self.raw() * vertex_count
 
 
-class Color(TemplateOverlay):
+class Color(_TemplateOverlay):
     def __init__(self, x, y, z, alpha=255, type="rgb"):
         self.opacity = alpha
         self.type = type
@@ -38,11 +38,11 @@ class Color(TemplateOverlay):
         return self.val1, self.val2, self.val3, self.opacity
 
 
-class Gradient(TemplateOverlay):
+class Gradient(_TemplateOverlay):
     pass
 
 
-class Texture(TemplateOverlay):
+class Texture(_TemplateOverlay):
     def __init__(self, image_path, coords):
         pass
 

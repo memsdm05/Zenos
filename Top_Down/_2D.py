@@ -1,8 +1,9 @@
 import pyglet
 from math import *
-from Top_Down.Resources.Overlays import WHITE, Texture, Color, Gradient
-from Top_Down.Resources.Rendering import *
-from Top_Down.Low_Level import LowLevel
+from Resources.Overlays import WHITE, _TemplateOverlay
+from Resources.Rendering import Group, _ElementTemplate
+from Resources.Math import Vector
+from Low_Level import LowLevel
 
 # utility functions
 convert_pos = LowLevel.convert_pos
@@ -35,7 +36,7 @@ def reflect():
 
 
 # layout for what everything should have
-class Template_2d(ElementTemplate):
+class _Template_2d(_ElementTemplate):
     dimension = 2
     _indexed = False
     mode = pyglet.graphics.GL_LINES
@@ -56,7 +57,7 @@ class Template_2d(ElementTemplate):
     def move(self, dx, dy):
         self.vertices = [(x+dx, y+dy) for x, y in self.vertices]
         x, y = self.location
-        self.location = x + dx, y + dy
+        self.location = Vector(x + dx, y + dy)
         self.update()
 
     def _find_center(self):
@@ -70,11 +71,11 @@ class Text:
         pass
 
 
-class Shape(Template_2d):
+class Shape(_Template_2d):
     mode = pyglet.graphics.GL_POLYGON
     _outline = pyglet.graphics.GL_LINE_LOOP
 
-    def __init__(self, overlay):
+    def __init__(self, overlay: _TemplateOverlay):
         super(Shape, self).__init__(overlay)
         self.texture = overlay
         # self.outline_color = None
@@ -85,7 +86,7 @@ class Shape(Template_2d):
 
 
 class Polygon(Shape):
-    def __init__(self, list_of_points, color=WHITE):
+    def __init__(self, list_of_points: list, color: _TemplateOverlay = WHITE):
         super(Polygon, self).__init__(color)
         self.vertices = [convert_pos(pos) for pos in list_of_points]
         self.length = len(list_of_points)
@@ -105,20 +106,20 @@ class RegularPolygon(Polygon):
 class Rectangle(Polygon):
     _mode = pyglet.graphics.GL_QUADS
 
-    def __init__(self, pos, w, h, texture=WHITE):
+    def __init__(self, pos: tuple, w: float, h: float, texture: _TemplateOverlay = WHITE):
         x, y = pos
-        self.center = convert_pos(pos)
         vertices = ((x, y), (x + w, y), (x + w, y - h), (x, y - h))
-        self.vertices = vertices
         super(Rectangle, self).__init__(vertices, texture)
+        self.location = convert_pos(pos)
+        self.vertices = vertices
 
 
 class Square(Rectangle):
-    def __init__(self, point, side, texture=WHITE):
+    def __init__(self, point: tuple, side: float, texture: _TemplateOverlay = WHITE):
         Rectangle.__init__(self, point, side, side, texture)
 
 
-class Line(Template_2d):
+class Line(_Template_2d):
     _mode = pyglet.graphics.GL_LINE
 
     def __init__(self, pos1, pos2, overlay=WHITE):
@@ -137,7 +138,7 @@ class Line(Template_2d):
         self._initialize()
 
 
-class Point(Template_2d):
+class Point(_Template_2d):
     _mode = pyglet.graphics.GL_POINT
 
     def __init__(self, x, y, color=WHITE):
@@ -152,7 +153,7 @@ class Point(Template_2d):
 
 
 class Ellipse(Shape):
-    def __init__(self, pos, horizontal_radius, vertical_radius, overlay=WHITE):
+    def __init__(self, pos: tuple, horizontal_radius: float, vertical_radius: float, overlay: _TemplateOverlay = WHITE):
         super(Ellipse, self).__init__(overlay)
         pos = convert_pos(pos)
         self.horizontal_radius = horizontal_radius
@@ -192,4 +193,4 @@ class Circle(Ellipse):  # could change to regular polygon
         return 2 * pi * self.radius
 
     def distance(self, point):
-        return distance(self.center, point) - self.radius
+        return distance(self.location, point) - self.radius

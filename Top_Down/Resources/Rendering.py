@@ -1,15 +1,16 @@
 import pyglet
-import Top_Down.Low_Level
-from Top_Down.Resources.Overlays import TemplateOverlay
+import Low_Level
+from Resources.Overlays import _TemplateOverlay
+from Resources.Math import Vector
 
 # todo - clean this shit up
-class ElementTemplate:
+class _ElementTemplate:
     mode = None
     dimension = None
     _indexed = True
     _vertex_type = ""
 
-    def __init__(self, overlay: TemplateOverlay):
+    def __init__(self, overlay: _TemplateOverlay):
         self.overlay = overlay
         self.vertices = None
         self.vertex_list = None
@@ -22,7 +23,7 @@ class ElementTemplate:
         self.vertex_list = self.group.add_raw(*self._get_vertex_data(self._raw_points, self.overlay))
 
     def render(self):
-        self.test().draw(self.mode)
+        self.group.render()
 
     def update(self):
         self._raw_points = self.vertices if type(self.vertices[0]) == float else self._points_to_raw(self.vertices)
@@ -32,7 +33,7 @@ class ElementTemplate:
         count = len(self.vertices)
         return pyglet.graphics.vertex_list(count, (self._vertex_type, self._raw_points), self.overlay.low_level(count))
 
-    def set_overlay(self, overlay):
+    def set_overlay(self, overlay: _TemplateOverlay):
         self.overlay = overlay
         self.update()
 
@@ -45,11 +46,11 @@ class ElementTemplate:
     def rotate(self):  # override determined by dimensions
         pass
 
-    def _get_vertex_data(self, vertices, overlay):
+    def _get_vertex_data(self, vertices: tuple, overlay: _TemplateOverlay):
         count = len(vertices) // self.dimension
         return count, self.mode, [i for i in range(count)], (self._vertex_type, vertices), overlay.low_level(count)
 
-    def _points_to_raw(self, points):
+    def _points_to_raw(self, points: list):
         x = ()
         for pt in points:
             x += pt
@@ -58,12 +59,12 @@ class ElementTemplate:
     def _get_vertex_list(self):
         return self._make_vertex_list(self._raw_points, self.overlay)
 
-    def _make_vertex_list(self, vertices, overlay):
+    def _make_vertex_list(self, vertices: tuple, overlay: _TemplateOverlay):
         if self.vertex_list is not None:
-            self.group.remove(self)
-        return self.group.add(self)  # _raw(*self._get_vertex_data(vertices, overlay))
+            self.vertex_list.delete()
+        return self.group.add_raw(*self._get_vertex_data(vertices, overlay))
 
-    def pair(self, other):
+    def pair(self, other):  # can't type while in the class
         other.group.add(self)
 
     def unpair(self, other):
@@ -83,51 +84,61 @@ class Group:
         self.Batch3 = pyglet.graphics.Batch()
         self.Batch2 = pyglet.graphics.Batch()
         self.Batch4 = None
+        self._2 = 0
+        self._3 = 0
         for item in args:
             self.add(item)
 
     def render(self):
         low = Low_Level.LowLevel.active
-        low.asser2d()
-        self.Batch2.draw()
-        low.enable3d()
-        self.Batch3.draw()
+        if self._2 > 0:
+            low.assert_2d()
+            self.Batch2.draw()
+        if self._3 > 0:
+            low.enable_3d()
+            self.Batch3.draw()
 
-    def add_raw(self, count, mode, indices, position_data, overlay_data):
+    def add_raw(self, count: int, mode, indices: list, position_data: tuple, overlay_data: tuple):
         dimension = int(position_data[0][1])
         if dimension == 2:
+            self._2 += 1
             return self.Batch2.add_indexed(count, mode, None, indices, position_data,
                                            overlay_data)  # count, mode, group, indices, data
         elif dimension == 3:
+            self._3 += 1
             return self.Batch3.add_indexed(count, mode, None, indices, position_data, overlay_data)
         else:
             pass
 
-    def add(self, other: ElementTemplate):
+    def add(self, other: _ElementTemplate):
         vertex_list = other.vertex_list  # accessing may change
         if other.dimension == 2:
             other_batch = other.group.Batch2
             other_batch.migrate(vertex_list, other.mode, None, self.Batch2)  # vertex list, mode, group, batch
+            self._2 += 1
         elif other.dimension == 3:
             other_batch = other.group.Batch3
             other_batch.migrate(vertex_list, other.mode, None, self.Batch3)  # vertex list, mode, group, batch
+            self._3 += 1
         else:
             pass
         return vertex_list
 
-    def remove(self, other: ElementTemplate):
+    def remove(self, other: _ElementTemplate):
         vertex_list = other.vertex_list  # accessing may change
         if other.dimension == 2:
             other_batch = other.group.Batch2
             self.Batch2.migrate(vertex_list, other.mode, None, other_batch)  # vertex list, mode, group, batch
+            self._2 -= 1
         elif other.dimension == 3:
             other_batch = other.group.Batch3
             self.Batch3.migrate(vertex_list, other.mode, None, other_batch)  # vertex list, mode, group, batch
+            self._3 -= 1
         else:
             pass
 
-    def __add__(self, other: ElementTemplate):
+    def __add__(self, other: _ElementTemplate):
         return self.add(other)
 
-    def __sub__(self, other: ElementTemplate):
+    def __sub__(self, other: _ElementTemplate):
         return self.remove(other)

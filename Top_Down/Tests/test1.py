@@ -1,10 +1,8 @@
-from Top_Level import Window
-import _2D
-import Resources
+from Zenos_package import *
 
 
 class TestWindow(Window):
-    c = _2D.Ellipse((500, 300), 200, 100)
+    c = TwoD.Rectangle((500, 300), 200, 100)
 
     def periodic(self, dt):
         self.clear()

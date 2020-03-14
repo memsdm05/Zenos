@@ -1,6 +1,6 @@
 from pyglet.gl import *
 from math import *
-from Top_Down.Resources.Math import Vector
+from Resources.Math import Vector
 
 
 class LowLevel:
@@ -35,12 +35,12 @@ class LowLevel:
         self.mode = 3
 
     def update_camera_position(self):
-        glLoadIdentity()
-        x, y = self.top_level.rotation
-        glRotatef(x + 180, 0, 1, 0)
-        glRotatef(y, cos(radians(x)), 0, sin(radians(x)))
-        x, y, z = self.top_level.position
-        glTranslatef(x, -y, -z)
+        glLoadIdentity()  # not sure what this does
+        x, y = self.top_level.rotation  # retrieve x (sideways turn), and y (updown turn)
+        glRotatef(x + 180, 0, 1, 0)  # turn camera to face side direction (for some reason 0 = face neg)
+        glRotatef(y, cos(radians(x)), 0, sin(radians(x)))  # rotate up down
+        x, y, z = self.top_level.position  # retrieve camera position
+        glTranslatef(x, -y, -z)  # move the camera
 
     def enable_2d(self):
         width, height = self.top_level.get_size()
