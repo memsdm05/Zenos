@@ -2,7 +2,7 @@ import pyglet
 from Top_Down.Low_Level import LowLevel
 import math
 from pyglet.window.key import *
-from Top_Down.Resources.Overlays import BLACK
+from Top_Down.Resources.Overlays import BLACK, Color
 from Top_Down.Resources.Rendering import Group
 
 
@@ -84,8 +84,8 @@ class Window(pyglet.window.Window):
         elif symbol == LEFT:
             self.move_sideways(-1)
 
-    def set_background(self, template):
-        pyglet.gl.glClearColor(*template.raw())
+    def set_background(self, color: Color):
+        pyglet.gl.glClearColor(*color.raw())
 
     def lock_mouse(self, should=True):  # todo add a escape
         self.mouse_locked = should

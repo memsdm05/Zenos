@@ -2,13 +2,14 @@ from Top_Down.Zenos_package import *
 
 
 class TestWindow(Window):
-    c = ThreeD.Cube((2, 3, 10), 1, RED)
+    c = ThreeD.Cube((2, 3, 10), 1, Gradient(GREEN, BLUE))
 
     def __init__(self):
         super(TestWindow, self).__init__()
         self.sky = ThreeD.RectPrism((0, 0, 50), 1, 100, 70, LIGHT_BLUE)
         self.ground = ThreeD.RectPrism((0, -2, 0), 100, 1000, 1, BROWN)
-        self.c.set_front_texture(PINK)
+        # self.c.set_front_texture(PINK)
+        # self.c.set_left_texture(Gradient(GREEN, BLUE))
 
     def periodic(self, dt):
         self.clear()

@@ -1,6 +1,6 @@
 import pyglet
-from Top_Down.Low_Level import LowLevel
-from Top_Down.Resources.Overlays import WHITE, _TemplateOverlay
+from Low_Level import LowLevel
+from Resources.Overlays import WHITE, _TemplateOverlay
 from Top_Down.Resources.Rendering import _ElementTemplate, Group
 
 
@@ -55,7 +55,7 @@ class RectPrism(Figure):
         self.set_left_texture(self.overlay)
 
     def _create_vertex_list(self, verts: tuple, overlay: _TemplateOverlay):
-        return pyglet.graphics.vertex_list(4, (self._vertex_type, verts), overlay.low_level(4))
+        return pyglet.graphics.vertex_list(4, (self._vertex_type, verts), overlay.lower_level(self._raw_to_points(verts)))
 
     def _get_vertices(self):
         return self._get_all_vertices()
@@ -86,11 +86,11 @@ class RectPrism(Figure):
 
     def _get_right(self):
         x, y, z, dx, dy, dz = self._get_creation_info()
-        return x + dx, y - dy, z + dz, x + dx, y - dy, z - dz, x + dx, y + dy, z - dz, x + dx, y + dy, z + dz
+        return x - dx, y - dy, z - dz, x - dx, y - dy, z + dz, x - dx, y + dy, z + dz, x - dx, y + dy, z - dz
 
     def _get_left(self):
         x, y, z, dx, dy, dz = self._get_creation_info()
-        return x - dx, y - dy, z - dz, x - dx, y - dy, z + dz, x - dx, y + dy, z + dz, x - dx, y + dy, z - dz
+        return x + dx, y - dy, z + dz, x + dx, y - dy, z - dz, x + dx, y + dy, z - dz, x + dx, y + dy, z + dz
 
     def set_top_texture(self, texture: _TemplateOverlay):
         self._top_texture = texture

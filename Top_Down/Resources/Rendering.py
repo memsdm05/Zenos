@@ -1,6 +1,6 @@
 import pyglet
-import Top_Down.Low_Level
-from Top_Down.Resources.Overlays import _TemplateOverlay
+import Low_Level
+from Resources.Overlays import _TemplateOverlay
 
 # todo - clean this shit up
 class _ElementTemplate:
@@ -16,21 +16,27 @@ class _ElementTemplate:
         self._raw_points = None
         self.group = Group()
         self.location = None
+        self.amount_of_vertices = None
 
     def _initialize(self):
-        self._raw_points = self.vertices if type(self.vertices[0]) == float else self._points_to_raw(self.vertices)
+        if type(self.vertices[0]) == float:
+            self._raw_points = tuple(self.vertices)
+            self.vertices = self._raw_to_points(self._raw_points)
+        else:
+            self._raw_points = self._points_to_raw(self.vertices)
         self.vertex_list = self.group.add_raw(*self._get_vertex_data(self._raw_points, self.overlay))
+        self.amount_of_vertices = len(self._raw_points) // self.dimension
 
     def render(self):
         self.group.render()
 
     def update(self):
-        self._raw_points = self.vertices if type(self.vertices[0]) == float else self._points_to_raw(self.vertices)
+        self._raw_points = self._points_to_raw(self.vertices)
         self.vertex_list = self._get_vertex_list()
 
     def test(self):
         count = len(self.vertices)
-        return pyglet.graphics.vertex_list(count, (self._vertex_type, self._raw_points), self.overlay.low_level(count))
+        return pyglet.graphics.vertex_list(count, (self._vertex_type, self._raw_points), self.overlay.low_level(self))
 
     def set_overlay(self, overlay: _TemplateOverlay):
         self.overlay = overlay
@@ -47,13 +53,21 @@ class _ElementTemplate:
 
     def _get_vertex_data(self, vertices: tuple, overlay: _TemplateOverlay):
         count = len(vertices) // self.dimension
-        return count, self.mode, [i for i in range(count)], (self._vertex_type, vertices), overlay.low_level(count)
+        return count, self.mode, [i for i in range(count)], (self._vertex_type, vertices), overlay.low_level(self)
 
     def _points_to_raw(self, points: list):
         x = ()
         for pt in points:
             x += pt
         return x
+
+    def _raw_to_points(self, raw_points: tuple):
+        stuff = []
+        raw_points = list(raw_points)
+        while len(raw_points) > 0:
+            stuff.append(tuple(raw_points[0:self.dimension]))
+            raw_points = raw_points[self.dimension: len(raw_points)]
+        return stuff
 
     def _get_vertex_list(self):
         return self._make_vertex_list(self._raw_points, self.overlay)

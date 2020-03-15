@@ -2,7 +2,7 @@ from Top_Down.Zenos_package import *
 
 
 class TestWindow(Window):
-    c = TwoD.Rectangle((500, 300), 200, 100)
+    c = TwoD.Rectangle((500, 300), 200, 100, Gradient(WHITE, BLACK, "horizontal"))
 
     def periodic(self, dt):
         self.clear()
