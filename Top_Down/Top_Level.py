@@ -1,9 +1,9 @@
 import pyglet
-from Top_Down.Low_Level import LowLevel
+from Low_Level import LowLevel
 import math
 from pyglet.window.key import *
-from Top_Down.Resources.Overlays import BLACK, Color
-from Top_Down.Resources.Rendering import Group
+from Resources.Overlays import BLACK, Color
+from Resources.Rendering import Group
 
 
 class Window(pyglet.window.Window):
@@ -20,10 +20,10 @@ class Window(pyglet.window.Window):
         self.bg_color = BLACK
         Window.active_window = self
         self._inner = LowLevel(self)
-        self._draw_items2 = []
-        self._draw_items3 = []
         self.turn_sensivity = 10  # 1-100 = pixels mouse moves per degree of rotation
         self.mouse_locked = False
+        self.key_checker = KeyStateHandler()
+        self.push_handlers(self.key_checker)
 
     def start(self):
         pyglet.clock.schedule_interval(self._periodic, 1 / 120.0)
@@ -38,7 +38,16 @@ class Window(pyglet.window.Window):
         Window.active_window.periodic(dt)
 
     def periodic(self, dt: float):
-        pass
+        speed = 20
+        if self.is_pressed(DOWN) or self.is_pressed(S):
+            self.move_forward(-dt * speed)
+        elif self.is_pressed(UP) or self.is_pressed(W):
+            self.move_forward(dt * speed)
+        elif self.is_pressed(RIGHT) or self.is_pressed(D):
+            self.move_sideways(dt * speed)
+        elif self.is_pressed(LEFT) or self.is_pressed(A):
+            self.move_sideways(-dt * speed)
+        self.render_shown()
 
     def render(self, *args):
         for item in args:
@@ -58,6 +67,10 @@ class Window(pyglet.window.Window):
                 print("The item you tried to render was not valid")
                 self.quit()
 
+    def render_shown(self):
+        self.clear()
+        self._inner.render()
+
     def draw_all(self):
         self._inner.assert_2d()
         for item in self._draw_items2:
@@ -74,16 +87,6 @@ class Window(pyglet.window.Window):
             self.rotation = side + theta_x, up + theta_y
             self._inner.update_camera_position()
 
-    def on_key_press(self, symbol, modifiers):
-        if symbol == DOWN:
-            self.move_forward(-1)
-        elif symbol == UP:
-            self.move_forward(1)
-        elif symbol == RIGHT:
-            self.move_sideways(1)
-        elif symbol == LEFT:
-            self.move_sideways(-1)
-
     def set_background(self, color: Color):
         pyglet.gl.glClearColor(*color.raw())
 
@@ -98,8 +101,7 @@ class Window(pyglet.window.Window):
         dy = math.sin(math.radians(up)) * dis
         x, y, z = self.position
         self.position = x + dx, y + dy, z + dz
-        # self._inner.update_camera_position()
-        self._inner.enable_3d()
+        self._inner.update_camera_position()
 
     def move_sideways(self, dis):
         side, up = self.rotation
@@ -109,5 +111,7 @@ class Window(pyglet.window.Window):
         dy = 0  # math.sin(math.radians(up)) * dis
         x, y, z = self.position
         self.position = x + dx, y + dy, z + dz
-        # self._inner.update_camera_position()
-        self._inner.enable_3d()
+        self._inner.update_camera_position()
+
+    def is_pressed(self, key):
+        return self.key_checker[key]

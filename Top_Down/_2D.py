@@ -1,9 +1,9 @@
 import pyglet
 from math import *
-from Top_Down.Resources.Overlays import WHITE, _TemplateOverlay
-from Top_Down.Resources.Rendering import Group, _ElementTemplate
-from Top_Down.Resources.Math import Vector
-from Top_Down.Low_Level import LowLevel
+from Resources.Overlays import WHITE, _TemplateOverlay
+from Resources.Rendering import Group, _ElementTemplate
+from Resources.Math import Vector
+from Low_Level import LowLevel
 
 # utility functions
 convert_pos = LowLevel.convert_pos
@@ -66,9 +66,33 @@ class _Template_2d(_ElementTemplate):
         return sum(all_x) // len(all_x), sum(all_y) // len(all_y)
 
 
-class Text:
+class Text(_Template_2d):
     def __init__(self, pos, str, font_size, font_color=WHITE):
-        pass
+        super(Text, self).__init__(font_color)
+        self.location = convert_pos(pos)
+        self.x, self.y = self.location
+        self.msg = str
+        self.font_size = font_size
+        self.label = self._get_label()
+
+    def _get_label(self):
+        return pyglet.text.Label(self.msg, font_name="Times New Roman", font_size=self.font_size,
+                                 x=self.x, y=self.y, color=self.overlay.raw())
+
+    def update(self):
+        self.label = self._get_label()
+
+    def move(self, dx, dy):
+        self.x += dx
+        self.y += dy
+        self.location = self.x, self.y
+
+    def set_string(self, s):
+        self.msg = str(s)
+        self.update()
+
+    def render(self):
+        self.label.draw()
 
 
 class Shape(_Template_2d):

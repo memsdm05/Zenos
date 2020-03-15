@@ -13,12 +13,15 @@ class _TemplateOverlay:
 
 
 class Color(_TemplateOverlay):
+    previously_made = []
+
     def __init__(self, x: int, y: int, z: int, alpha=255, type="rgb"):
         self.opacity = alpha
         self.type = type
         self.val1 = x
         self.val2 = y
         self.val3 = z
+        self.previously_made.append(self)
 
     def convertToRGB(color):
         if color.type == "bgr":

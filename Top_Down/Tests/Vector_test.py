@@ -1,4 +1,4 @@
-from Top_Down.Resources.Math import Vector
+from Resources.Math import Vector
 
 
 x = (1, 1)

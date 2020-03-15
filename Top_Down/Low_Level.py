@@ -1,6 +1,7 @@
+from Resources import Rendering
 from pyglet.gl import *
 from math import *
-from Top_Down.Resources.Math import Vector
+from Resources.Math import Vector
 
 
 class LowLevel:
@@ -13,6 +14,8 @@ class LowLevel:
         self.mode = 2
         LowLevel.width, LowLevel.height = window.get_size()
         LowLevel.active = self
+        self.group = Rendering.Group()
+        Rendering.low = self
 
     @staticmethod
     def convert_pos(pos):
@@ -61,3 +64,6 @@ class LowLevel:
     def assert_2d(self):
         if self.mode != 2:
             self.enable_2d()
+
+    def render(self):
+        self.group.render()

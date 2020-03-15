@@ -1,12 +1,17 @@
 import pyglet
 from Low_Level import LowLevel
 from Resources.Overlays import WHITE, _TemplateOverlay
-from Top_Down.Resources.Rendering import _ElementTemplate, Group
+from Resources.Rendering import _ElementTemplate
+from Resources.Math import Vector
 
 
 class Template3d(_ElementTemplate):
     dimension = 3
     _vertex_type = "v3f"
+
+    def _initialize(self):
+        super(Template3d, self)._initialize()
+        self._switch_coordinate_system()
 
     def moveTo(self, x: float, y: float, z: float):
         cx, cy, cz = self.location
@@ -14,13 +19,26 @@ class Template3d(_ElementTemplate):
         self.move(dx, dy, dz)
 
     def move(self, dx: float, dy: float, dz: float):
-        pass
+        x, y, z = self.location
+        self.location = Vector(x+dx, y+dy, z+dz)
+        dx = -dx
+        self.vertices = [(x+dx, y+dy, z+dz) for x, y, z in self.vertices]
+        self.update()
+
+    def update(self):
+        # self._switch_coordinate_system()
+        super(Template3d, self).update()
+        # self._switch_coordinate_system()
 
     def rotate(self, pitch=0, yaw=0, roll=0):
         pass
 
     def _get_vertex_list(self):
-        return self._create_vertex_list(self.vertices, self.overlay)
+        return super(Template3d, self)._get_vertex_list()  # self._create_vertex_list(self.vertices, self.overlay)
+
+    def _switch_coordinate_system(self):
+        x, y, z = self.location
+        self.location = -x, y, z
 
 
 class Figure(Template3d):  # basic 3d thing
@@ -117,7 +135,7 @@ class RectPrism(Figure):
         self.left = self._create_vertex_list(self._get_left(), self._left_texture)
 
     def _get_vertex_list(self):
-        self._establish_faces()
+        return super(RectPrism, self)._get_vertex_list()  # self._establish_faces()
 
     def render(self):  # todo implent batch rendering here
         self.top.draw(self.mode)

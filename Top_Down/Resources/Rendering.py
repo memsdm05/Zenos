@@ -1,6 +1,7 @@
 import pyglet
-import Low_Level
 from Resources.Overlays import _TemplateOverlay
+
+low = None
 
 # todo - clean this shit up
 class _ElementTemplate:
@@ -17,6 +18,7 @@ class _ElementTemplate:
         self.group = Group()
         self.location = None
         self.amount_of_vertices = None
+        self.showing = False
 
     def _initialize(self):
         if type(self.vertices[0]) == float:
@@ -28,11 +30,13 @@ class _ElementTemplate:
         self.amount_of_vertices = len(self._raw_points) // self.dimension
 
     def render(self):
-        self.group.render()
+        self.vertex_list.render()
 
     def update(self):
         self._raw_points = self._points_to_raw(self.vertices)
         self.vertex_list = self._get_vertex_list()
+        if self.showing:
+            self.show()
 
     def test(self):
         count = len(self.vertices)
@@ -89,6 +93,14 @@ class _ElementTemplate:
     def __sub__(self, other):
         self.unpair(other)
 
+    def hide(self):
+        self.vertex_list.delete()
+        self.vertex_list = self._get_vertex_list()
+
+    def show(self):
+        self.showing = True
+        low.group.add(self)
+
 
 # draw group  # todo make this better
 class Group:
@@ -103,7 +115,6 @@ class Group:
             self.add(item)
 
     def render(self):
-        low = Low_Level.LowLevel.active
         if self._2 > 0:
             low.assert_2d()
             self.Batch2.draw()
