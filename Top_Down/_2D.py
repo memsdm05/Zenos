@@ -1,20 +1,14 @@
 import pyglet
 from math import *
 from Resources.Overlays import WHITE, _TemplateOverlay
-from Resources.Rendering import Group, _ElementTemplate
-from Resources.Math import Vector
+from Resources.Rendering import _ElementTemplate
+from Resources.Math import Vector, distance
 from Low_Level import LowLevel
+from _3D import LowerDimensional
+from copy import deepcopy
 
 # utility functions
 convert_pos = LowLevel.convert_pos
-
-
-def distance(pos1, pos2):
-    x1, y1 = pos1
-    x2, y2 = pos2
-    dx = x2 - x1
-    dy = y2 - y1
-    return sqrt(dx*dx + dy*dy)
 
 
 def towards(pos1, pos2):
@@ -27,8 +21,40 @@ def towards(pos1, pos2):
     return angle
 
 
-def rotate(list_of_points, amount, center=None):
-    pass
+def rotate_polygon(list_of_points, rotation, center):
+    center_x, center_y = center
+    x_cordinates = []
+    y_cordinates = []
+
+    for x, y in list_of_points:
+        x_cordinates.append(x-center_x)
+        y_cordinates.append(y-center_y)
+    point_matrix = []
+    point_matrix.append(x_cordinates)
+    point_matrix.append(y_cordinates)
+
+    rotation = radians(rotation)
+    rotation_matrix = [
+        [cos(rotation), -sin(rotation)],
+        [sin(rotation), cos(rotation)]
+    ]
+
+    result = [[], []]
+    for i in range(len(x_cordinates)):  # result = R * thing1
+        result[0].append(0)
+        result[1].append(0)
+    for i in range(len(rotation_matrix)):
+        # iterate through columns of Y
+        for j in range(len(point_matrix[0])):
+            # iterate through rows of Y
+            for k in range(len(point_matrix)):
+                result[i][j] += rotation_matrix[i][k] * point_matrix[k][j]
+
+    polygon = []
+    for x, y in zip(result[0], result[1]):
+        polygon.append((x + center_x, y + center_y))
+
+    return polygon
 
 
 def reflect():
@@ -38,35 +64,85 @@ def reflect():
 # layout for what everything should have
 class _Template_2d(_ElementTemplate):
     dimension = 2
-    _indexed = False
+    _pending3D = False
     mode = pyglet.graphics.GL_LINES
-    _vertex_type = "v2f"
+    _vertex_type_base = "v2f"
 
-    def moveTo(self, pos):
+    def __new__(cls, pos, *args, **kwargs):
+        is_list = type(pos) == list
+        example_pos = pos[0] if is_list else pos
+        dimension = len(example_pos)
+        if dimension == 3:
+            if is_list:
+                cls._pending3D = pos
+                pos = [(x, y) for x, y, z in pos]
+            else:
+                pos = pos[0], pos[1]
+                cls._pending3D = pos[2]
+        args = (pos, *args)
+        return super(_Template_2d, cls).__new__(cls)
+
+    def __init__(self, overlay):
+        super(_Template_2d, self).__init__(overlay)
+        self.rotation = 0
+
+    def _initialize(self):
+        if self._pending3D is not False:
+            if self._pending3D == list:
+                self._convert_to3d(self._pending3D)
+                self.hide()
+            else:
+                self._convert_to3d([(x, y, self._pending3D) for x, y in self.vertices])
+        else:
+            super(_Template_2d, self)._initialize()
+
+    def moveTo(self, pos=None, rotation=None):
         pos = convert_pos(pos)
         x1, y1 = pos
         x2, y2 = self.location
-        dx = x1 - x2
-        dy = y1 - y2
-        self.move(dx, dy)
+        dx = 0 if pos is None else x1 - x2
+        dy = 0 if pos is None else y1 - y2
+        dr = 0 if rotation is None else rotation-self.rotation
+        self.move(dx, dy, dr)
 
-    def rotate(self, amount):
-        self.vertices = rotate(self.vertices, amount, self._find_center())
-        self.update()
+    def move(self, dx=0, dy=0, rotation=0):
+        change = False
+        if dx != 0 or dy != 0:
+            change = True
+            self.vertices = [(x+dx, y+dy) for x, y in self.vertices]
+            x, y = self.location
+            self.location = Vector(x + dx, y + dy)
+        if self.rotation != 0:
+            change = True
+            self._rotate(rotation)
+        if change:
+            self.update()
 
-    def move(self, dx, dy):
-        self.vertices = [(x+dx, y+dy) for x, y in self.vertices]
-        x, y = self.location
-        self.location = Vector(x + dx, y + dy)
-        self.update()
+    def _rotate(self, amount):
+        self.rotation += amount
+        self.vertices = rotate_polygon(self.vertices, amount, self._find_center())
 
-    def _find_center(self):
-        all_x = [x for x, y in self.vertices]
-        all_y = [y for x, y in self.vertices]
-        return sum(all_x) // len(all_x), sum(all_y) // len(all_y)
+    def _convert_to3d(self, new_verts):
+        self._pending3D = False
+        self.vertices = new_verts
+
+    def get_3D_version(self, pos):
+        pos = convert_pos(pos)
+        x, y, z = pos
+        dx, dy = Vector.from_2_points(self.location, (x, y))
+        verts = deepcopy(self.vertices)
+        self._convert_to3d([(x+dx, y+dy, 0) for x, y in self.vertices])
+        new = LowerDimensional(self)
+        self.vertices = verts
+        return new
+
+    def _convert_pos(self, pos):
+        return convert_pos((pos[0], pos[1]))
 
 
-class Text(_Template_2d):
+class Text(_ElementTemplate):
+    dimension = 2
+
     def __init__(self, pos, str, font_size, font_color=WHITE):
         super(Text, self).__init__(font_color)
         self.location = convert_pos(pos)
@@ -112,13 +188,9 @@ class Shape(_Template_2d):
 class Polygon(Shape):
     def __init__(self, list_of_points: list, color: _TemplateOverlay = WHITE):
         super(Polygon, self).__init__(color)
-        self.vertices = [convert_pos(pos) for pos in list_of_points]
+        self.vertices = [self._convert_pos(pos) for pos in list_of_points]
         self.length = len(list_of_points)
-        self.lines = []
-        for i in range(self.length):
-            p1 = list_of_points[i]
-            p2 = list_of_points[0] if i == self.length - 1 else list_of_points[i + 1]
-            self.lines.append(Line(p1, p2))
+        self.location = self._find_center()
         self._initialize()
 
 
@@ -131,11 +203,12 @@ class Rectangle(Polygon):
     _mode = pyglet.graphics.GL_QUADS
 
     def __init__(self, pos: tuple, w: float, h: float, texture: _TemplateOverlay = WHITE):
+        pos = self._convert_pos(pos)
         x, y = pos
-        vertices = ((x, y), (x + w, y), (x + w, y - h), (x, y - h))
+        vertices = [(x, y), (x + w, y), (x + w, y - h), (x, y - h)]
         super(Rectangle, self).__init__(vertices, texture)
-        self.location = convert_pos(pos)
-        self.vertices = vertices
+        self.location = pos
+        # self.vertices = vertices
 
 
 class Square(Rectangle):
@@ -149,8 +222,8 @@ class Line(_Template_2d):
     def __init__(self, pos1, pos2, overlay=WHITE):
         super(Line, self).__init__(overlay)
         self.texture = overlay
-        pos1 = convert_pos(pos1)
-        pos2 = convert_pos(pos2)
+        pos1 = self._convert_pos(pos1)
+        pos2 = self._convert_pos(pos2)
         self.vertices = [pos1, pos2]
         x1, y1 = pos1
         x2, y2 = pos2
@@ -166,8 +239,8 @@ class Point(_Template_2d):
     _mode = pyglet.graphics.GL_POINT
 
     def __init__(self, x, y, color=WHITE):
-        super(Point, self).__init__()
-        x, y = convert_pos((x, y))
+        super(Point, self).__init__(color)
+        x, y = self._convert_pos((x, y))
         self.texture = color
         self.vertices = [(x, y)]
         self.x = x
@@ -179,7 +252,7 @@ class Point(_Template_2d):
 class Ellipse(Shape):
     def __init__(self, pos: tuple, horizontal_radius: float, vertical_radius: float, overlay: _TemplateOverlay = WHITE):
         super(Ellipse, self).__init__(overlay)
-        pos = convert_pos(pos)
+        pos = self._convert_pos(pos)
         self.horizontal_radius = horizontal_radius
         self.vertical_radius = vertical_radius
         self.location = pos
@@ -211,7 +284,7 @@ class Circle(Ellipse):  # could change to regular polygon
         self.radius = radius
         self.diameter = radius * 2
         super(Circle, self).__init__(pos, radius, radius)
-        self.texture = texture
+        self.texture = self.texture()
 
     def _perimeter(self):
         return 2 * pi * self.radius

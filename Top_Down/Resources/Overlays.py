@@ -1,3 +1,5 @@
+import pyglet
+from pyglet.gl import *
 
 class _TemplateOverlay:
     _mode = "c4B"
@@ -10,6 +12,9 @@ class _TemplateOverlay:
 
     def low_level(self, element):
         return self.lower_level(element.vertices)
+
+    def get_group(self):
+        return None
 
 
 class Color(_TemplateOverlay):
@@ -79,9 +84,73 @@ class Gradient(_TemplateOverlay):  # this is test - does not actually work
         return data
 
 
+def tex_coord(x, y, n=4):
+    """ Return the bounding vertices of the texture square.
+    """
+    m = 1.0 / n
+    dx = x * m
+    dy = y * m
+    return dx, dy, dx + m, dy, dx + m, dy + m, dx, dy + m
+
+
+def tex_coords(top, bottom, side):
+    """ Return a list of the texture squares for the top, bottom and side.
+    """
+    top = tex_coord(*top)
+    bottom = tex_coord(*bottom)
+    side = tex_coord(*side)
+    result = []
+    result.extend(top)
+    result.extend(bottom)
+    result.extend(side * 4)
+    return result
+
+
 class Texture(_TemplateOverlay):
-    def __init__(self, image_path, coords):
-        pass
+    _mode = "t2f"
+    glColor3f(1, 1, 1)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+
+    def __init__(self, image_path: str, rect: tuple = (0, 0, 1, 1)):
+        self.image = pyglet.image.load(image_path)
+        self._texture = self.image.get_texture()
+        x, y, w, h = rect
+        self._coords = [x,y, x+w,y, x+w,y+h, x,y+h]
+        # image_width, image_height = self.image.width, self.image.height
+        self._data = self.image.get_image_data()
+        self.TextureGroup = pyglet.graphics.TextureGroup(self._texture)
+        # glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (image_width), (image_height), 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
+
+    def raw(self, vertices: list = None):
+        # dimension = len(vertices[0])
+        count = 4 if vertices is None else len(vertices)
+        length = count//4
+        return self._coords * length
+
+    def get_group(self):
+        return self.TextureGroup
+
+
+class MultiTexture(_TemplateOverlay):
+    _mode = "t2f"
+    def __init__(self, bottom: Texture, top: Texture, front: Texture, back: Texture, right: Texture, left: Texture):
+        self.bottom = bottom
+        self.top = top
+        self.front = front
+        self.back = back
+        self.right = right
+        self.left = left
+
+    def get_group(self):
+        return self.bottom.get_group()
+
+    def raw(self, vertices: list = [(0, 0)]):
+        dimension = len(vertices[0])
+        assert dimension == 3
+        return self.bottom.raw([1, 1, 1, 1]) + self.top.raw([1, 1, 1, 1]) + self.front.raw([1, 1, 1, 1]) + \
+               self.back.raw([1, 1, 1, 1]) + self.right.raw([1, 1, 1, 1]) + self.left.raw([1, 1, 1, 1])
+
 
 # constants
 RED = Color(255, 0, 0)
@@ -100,4 +169,4 @@ DARK_GREEN = Color(0, 100, 0)
 PINK = Color(255, 192, 203)
 ORANGE = Color(255, 69, 0)
 BROWN = Color(165, 42, 42)
-LIGHT_BLUE = Color(173, 216, 230)
+LIGHT_BLUE = Color(135, 206, 235)

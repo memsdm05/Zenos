@@ -2,6 +2,8 @@ from Resources import Rendering
 from pyglet.gl import *
 from math import *
 from Resources.Math import Vector
+from collections import deque
+from time import time
 
 
 class LowLevel:
@@ -16,6 +18,7 @@ class LowLevel:
         LowLevel.active = self
         self.group = Rendering.Group()
         Rendering.low = self
+        self.queue = deque()
 
     @staticmethod
     def convert_pos(pos):
@@ -26,6 +29,7 @@ class LowLevel:
 
     def enable_3d(self):
         # self.top_level.Projection()
+        glEnable(GL_CULL_FACE)
         width, height = self.top_level.get_size()
         glEnable(GL_DEPTH_TEST)
         viewport = self.top_level.get_viewport_size()
@@ -38,7 +42,7 @@ class LowLevel:
         self.mode = 3
 
     def update_camera_position(self):
-        glLoadIdentity()  # not sure what this does
+        glLoadIdentity()  # load identity matrix
         x, y = self.top_level.rotation  # retrieve x (sideways turn), and y (updown turn)
         glRotatef(x + 180, 0, 1, 0)  # turn camera to face side direction (for some reason 0 = face neg)
         glRotatef(y, cos(radians(x)), 0, sin(radians(x)))  # rotate up down
@@ -46,6 +50,7 @@ class LowLevel:
         glTranslatef(x, -y, -z)  # move the camera
 
     def enable_2d(self):
+        glDisable(GL_CULL_FACE)
         width, height = self.top_level.get_size()
         glDisable(GL_DEPTH_TEST)
         viewport = self.top_level.get_viewport_size()
@@ -66,4 +71,10 @@ class LowLevel:
             self.enable_2d()
 
     def render(self):
-        self.group.render()
+        Rendering._ElementTemplate.default_group.render()
+
+    def process_queue(self, tick=1/20):
+        t = time()
+        while time() - t < tick and self.queue:
+            func, args = self.queue.popleft()
+            func(*args)

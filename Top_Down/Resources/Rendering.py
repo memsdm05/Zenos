@@ -1,24 +1,47 @@
 import pyglet
 from Resources.Overlays import _TemplateOverlay
+from Resources.Math import distance, Vector
 
 low = None
 
-# todo - clean this shit up
+
+def multidimensional_rotation(list_of_points, center, **kwargs):
+    variable_translator = {'x': 1, 'y': 2, 'z': 3, 'w': 4}  # variable to dimension of significance
+    dimension = len(list_of_points[0])
+    coords = [[] for i in range(dimension)]
+    # position matrix
+    for pt in list_of_points:
+        for i, num in enumerate(pt):
+            coords[i] = num
+
+    # rotation matricies
+    # rotations = [radians(arg) for arg in kwargs]
+
+    # multiply the rotation matricies
+
+    # multiply postion * rotation
+
+    # translate back
+
+
 class _ElementTemplate:
     mode = None
     dimension = None
     _indexed = True
-    _vertex_type = ""
+    _vertex_type_base = ""
+    default_group = None
 
     def __init__(self, overlay: _TemplateOverlay):
         self.overlay = overlay
         self.vertices = None
         self.vertex_list = None
         self._raw_points = None
-        self.group = Group()
+        self.group = self.default_group
         self.location = None
         self.amount_of_vertices = None
-        self.showing = False
+        self.showing = True
+        self._vertex_type = self._vertex_type_base
+        self.rotation = None
 
     def _initialize(self):
         if type(self.vertices[0]) == float:
@@ -30,13 +53,11 @@ class _ElementTemplate:
         self.amount_of_vertices = len(self._raw_points) // self.dimension
 
     def render(self):
-        self.vertex_list.render()
+        self.vertex_list.draw(self.mode)
 
     def update(self):
         self._raw_points = self._points_to_raw(self.vertices)
-        self.vertex_list = self._get_vertex_list()
-        if self.showing:
-            self.show()
+        self.vertex_list.vertices = list(self._raw_points)
 
     def test(self):
         count = len(self.vertices)
@@ -52,18 +73,20 @@ class _ElementTemplate:
     def move(self):  # override in other templates
         pass
 
-    def rotate(self):  # override determined by dimensions
-        pass
 
     def _get_vertex_data(self, vertices: tuple, overlay: _TemplateOverlay):
         count = len(vertices) // self.dimension
-        return count, self.mode, [i for i in range(count)], (self._vertex_type, vertices), overlay.low_level(self)
+        return count, self.mode, overlay.get_group(), [i for i in range(count)], \
+               (self._vertex_type, vertices), overlay.low_level(self)
+
+    def vert_data(self):
+        return self._get_vertex_data(self.vertices, self.overlay)
 
     def _points_to_raw(self, points: list):
-        x = ()
+        x = []
         for pt in points:
             x += pt
-        return x
+        return tuple(x)
 
     def _raw_to_points(self, raw_points: tuple):
         stuff = []
@@ -77,9 +100,7 @@ class _ElementTemplate:
         return self._make_vertex_list(self._raw_points, self.overlay)
 
     def _make_vertex_list(self, vertices: tuple, overlay: _TemplateOverlay):
-        if self.vertex_list is not None:
-            self.vertex_list.delete()
-        return self.group.add_raw(*self._get_vertex_data(vertices, overlay))
+        return self.group.add_raw(*self._get_vertex_data(vertices, overlay)) if self.group is not None else None
 
     def pair(self, other):  # can't type while in the class
         other.group.add(self)
@@ -94,12 +115,38 @@ class _ElementTemplate:
         self.unpair(other)
 
     def hide(self):
-        self.vertex_list.delete()
-        self.vertex_list = self._get_vertex_list()
+        if self.showing:
+            self.showing = False
+            self.vertex_list.delete()
+            self.group = None
+            self.vertex_list = self._get_vertex_list()
 
     def show(self):
-        self.showing = True
-        low.group.add(self)
+        if not self.showing:
+            self.showing = True
+            self.default_group.add(self)
+
+    def __del__(self):
+        if self.vertex_list is not None:
+            self.vertex_list.delete()
+
+    def distance(self, pt: tuple):
+        return distance(self.location, pt)
+
+    def _find_center(self):
+        sums = [0 for i in range(self.dimension)]
+        for pt in self.vertices:
+            for dimension, value in enumerate(pt):
+                sums[dimension] += value
+        count = len(self.vertices)
+        return tuple([dimension_sum / count for dimension_sum in sums])
+
+    def resize(self, amount):
+        self.vertices = [tuple([(vertex[i] - self.location[i]) * amount + self.location[i] for i in range(len(vertex))]) for vertex in self.vertices]
+        self.update()
+
+    def __mul__(self, other):
+        self.resize(other)
 
 
 # draw group  # todo make this better
@@ -115,48 +162,50 @@ class Group:
             self.add(item)
 
     def render(self):
-        if self._2 > 0:
-            low.assert_2d()
-            self.Batch2.draw()
         if self._3 > 0:
             low.enable_3d()
             self.Batch3.draw()
+        if self._2 > 0:
+            low.assert_2d()
+            self.Batch2.draw()
 
-    def add_raw(self, count: int, mode, indices: list, position_data: tuple, overlay_data: tuple):
+    def add_raw(self, count: int, mode, group: pyglet.graphics.Group, indices: list, position_data: tuple, overlay_data: tuple):
         dimension = int(position_data[0][1])
         if dimension == 2:
             self._2 += 1
-            return self.Batch2.add_indexed(count, mode, None, indices, position_data,
+            return self.Batch2.add_indexed(count, mode, group, indices, position_data,
                                            overlay_data)  # count, mode, group, indices, data
         elif dimension == 3:
             self._3 += 1
-            return self.Batch3.add_indexed(count, mode, None, indices, position_data, overlay_data)
+            return self.Batch3.add_indexed(count, mode, group, indices, position_data, overlay_data)
         else:
             pass
 
-    def add(self, other: _ElementTemplate):
-        vertex_list = other.vertex_list  # accessing may change
+    def add(self, other: _ElementTemplate):  # allow adding if group is none
+        if other.group is None:
+            return self.add_raw(*other.vert_data())
+        vertex_list = other.vertex_list
         if other.dimension == 2:
             other_batch = other.group.Batch2
-            other_batch.migrate(vertex_list, other.mode, None, self.Batch2)  # vertex list, mode, group, batch
+            other_batch.migrate(vertex_list, other.mode, other.overlay.get_group(), self.Batch2)  # vertex list, mode, group, batch
             self._2 += 1
         elif other.dimension == 3:
             other_batch = other.group.Batch3
-            other_batch.migrate(vertex_list, other.mode, None, self.Batch3)  # vertex list, mode, group, batch
+            other_batch.migrate(vertex_list, other.mode, other.overlay.get_group(), self.Batch3)  # vertex list, mode, group, batch
             self._3 += 1
         else:
             pass
         return vertex_list
 
     def remove(self, other: _ElementTemplate):
-        vertex_list = other.vertex_list  # accessing may change
+        vertex_list = other.vertex_list
         if other.dimension == 2:
             other_batch = other.group.Batch2
-            self.Batch2.migrate(vertex_list, other.mode, None, other_batch)  # vertex list, mode, group, batch
+            self.Batch2.migrate(vertex_list, other.mode, other.overlay.get_group(), other_batch)  # vertex list, mode, group, batch
             self._2 -= 1
         elif other.dimension == 3:
             other_batch = other.group.Batch3
-            self.Batch3.migrate(vertex_list, other.mode, None, other_batch)  # vertex list, mode, group, batch
+            self.Batch3.migrate(vertex_list, other.mode, other.overlay.get_group(), other_batch)  # vertex list, mode, group, batch
             self._3 -= 1
         else:
             pass
@@ -166,3 +215,6 @@ class Group:
 
     def __sub__(self, other: _ElementTemplate):
         return self.remove(other)
+
+
+_ElementTemplate.default_group = Group()
